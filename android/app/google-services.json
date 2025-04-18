@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1053984227424",
+    "project_id": "quizmaster-main",
+    "storage_bucket": "quizmaster-main.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1053984227424:android:51532c3c4512b149fb0305",
+        "android_client_info": {
+          "package_name": "com.quizmaster.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1053984227424-evljdr64v52e6k8a31ctbt3jhaqa16p7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.quizmaster.app",
+            "certificate_hash": "d8afdf6766ff6621f586547d57552a8aef2ad6df"
+          }
+        },
+        {
+          "client_id": "1053984227424-mqh49nkemcaioh26qd6f2v3rqorasgc4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIQEgQYLAgqc59MqPc_WHgJPIFeLy-jCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1053984227424-adsk5b60qmbje09dm4q6ornedocbn40s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
