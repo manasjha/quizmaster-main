@@ -1,4 +1,4 @@
-# quizmaster
+# quizmaster-main
 
 A new Flutter project.
 
