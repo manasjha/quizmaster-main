@@ -33,6 +33,10 @@ dependencies:
   google_sign_in: ^6.1.5
   firebase_core: ^2.25.4
   firebase_auth: ^4.17.4
+  cloud_firestore: ^4.13.2  # or latest stable
+  firebase_storage: ^11.6.6     # ✅ Add this
+  image_picker: ^1.0.7          # ✅ And this
+
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -55,6 +59,19 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/logo.png
+  fonts:
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-Regular.ttf
+        - asset: assets/fonts/Cinzel-Bold.ttf
+          weight: 700
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
