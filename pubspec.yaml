@@ -36,6 +36,8 @@ dependencies:
   cloud_firestore: ^4.13.2  # or latest stable
   firebase_storage: ^11.6.6     # ✅ Add this
   image_picker: ^1.0.7          # ✅ And this
+  provider: ^6.1.1
+  lucide_icons: ^0.257.0
 
 
 
@@ -62,6 +64,9 @@ flutter:
   assets:
     - assets/logo.png
     - assets/logo/isylsi_logo.png
+    - assets/logo/isylsi_logo_new.png
+    - assets/icons/leaf_icon_white.png
+    - assets/icons/leaf_icon_gray.png
   fonts:
     - family: Cinzel
       fonts:

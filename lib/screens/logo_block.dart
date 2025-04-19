@@ -9,18 +9,17 @@ class LogoBlock extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/isylsi_logo.png',
-          width: 120,
+          'assets/logo/isylsi_logo.png',
+          width: 240,
           height: 120,
-          color: const Color(0xFFD4AF37),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 0),
         const Text(
           'AI Powered Quizzes For CBSE Classes 6 – 10',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 14,
+            fontSize: 18,
             color: Colors.white70,
             height: 1.5,
             letterSpacing: 0.5,

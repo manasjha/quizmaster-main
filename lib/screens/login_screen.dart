@@ -2,10 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
 import 'home_screen.dart';
 import 'ftue_screen.dart';
 import 'logo_block.dart';
 import 'logo_wrapper.dart';
+import '../models/user_model.dart';
+import '../providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -74,9 +78,18 @@ class _LoginScreenState extends State<LoginScreen>
       final user = userCred.user;
 
       if (user != null) {
+        final userModel = UserModel(
+          uid: user.uid,
+          name: user.displayName ?? '',
+          email: user.email ?? '',
+          photoUrl: user.photoURL ?? '',
+        );
+
+        // Store user in Provider
+        Provider.of<UserProvider>(context, listen: false).setUser(userModel);
+
         final userDocRef =
             FirebaseFirestore.instance.collection('users').doc(user.uid);
-
         final userDoc = await userDocRef.get();
 
         if (userDoc.exists) {
@@ -121,7 +134,6 @@ class _LoginScreenState extends State<LoginScreen>
                 return LogoWrapper(offsetY: offsetY);
               },
             ),
-
             Positioned(
               bottom: 48,
               left: 0,
@@ -129,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen>
               child: FadeTransition(
                 opacity: _ctaFade,
                 child: Center(
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: isSigningIn ? null : signInWithGoogle,
                     icon: isSigningIn
                         ? const SizedBox(
@@ -138,26 +150,25 @@ class _LoginScreenState extends State<LoginScreen>
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.black),
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.login, color: Colors.black),
+                        : const Icon(Icons.login, color: Color(0xFFE62E53)),
                     label: Text(
                       isSigningIn ? 'Signing in...' : 'Continue with Google',
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 16,
-                        color: Colors.black,
+                        color: Colors.white70,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE62E53), width: 1.5),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      elevation: 5,
                     ),
                   ),
                 ),
