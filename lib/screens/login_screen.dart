@@ -4,6 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
 import 'ftue_screen.dart';
+import 'logo_block.dart';
+import 'logo_wrapper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,8 +14,44 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   bool isSigningIn = false;
+
+  late AnimationController _logoShiftController;
+  late AnimationController _ctaFadeController;
+  late Animation<double> _ctaFade;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _logoShiftController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    )..forward();
+
+    _ctaFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _ctaFade = CurvedAnimation(
+      parent: _ctaFadeController,
+      curve: Curves.easeIn,
+    );
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _ctaFadeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _logoShiftController.dispose();
+    _ctaFadeController.dispose();
+    super.dispose();
+  }
 
   Future<void> signInWithGoogle() async {
     setState(() => isSigningIn = true);
@@ -72,48 +110,57 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Image.asset('assets/logo.png', width: 100, height: 100),
-            const SizedBox(height: 16),
-            const Text(
-              'Isylsi',
-              style: TextStyle(
-                fontFamily: 'Cinzel',
-                fontSize: 34,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFD4AF37),
-                letterSpacing: 1.2,
-              ),
+            AnimatedBuilder(
+              animation: _logoShiftController,
+              builder: (_, __) {
+                final offsetY = -6 * _logoShiftController.value;
+                return LogoWrapper(offsetY: offsetY);
+              },
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'AI Powered Quizzes For CBSE Class 6 – 10',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Color(0xFFB2954A),
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: isSigningIn ? null : signInWithGoogle,
-              icon: const Icon(Icons.login, color: Color(0xFFD4AF37)),
-              label: const Text(
-                'Continue with Google',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16,
-                  color: Color(0xFFD4AF37),
+
+            Positioned(
+              bottom: 48,
+              left: 0,
+              right: 0,
+              child: FadeTransition(
+                opacity: _ctaFade,
+                child: Center(
+                  child: ElevatedButton.icon(
+                    onPressed: isSigningIn ? null : signInWithGoogle,
+                    icon: isSigningIn
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.black),
+                            ),
+                          )
+                        : const Icon(Icons.login, color: Colors.black),
+                    label: Text(
+                      isSigningIn ? 'Signing in...' : 'Continue with Google',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                    ),
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: Colors.black,
-                side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
               ),
             ),
           ],

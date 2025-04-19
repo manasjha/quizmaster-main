@@ -1,11 +1,13 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'logo_block.dart';
+import 'login_screen.dart';
 import 'home_screen.dart';
 import 'ftue_screen.dart';
-import 'login_screen.dart';
+import 'logo_wrapper.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,36 +18,40 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  static const bool forceLogout = true; // ✅ Toggle this to false when done
+
   late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _scaleAnim;
 
   @override
   void initState() {
     super.initState();
 
-    // TEMP: force sign out for testing
-    FirebaseAuth.instance.signOut();
-    GoogleSignIn().signOut();
+    if (forceLogout) {
+      FirebaseAuth.instance.signOut();
+      GoogleSignIn().signOut();
+    }
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(seconds: 2),
     );
 
-    _scaleAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _scaleAnim = Tween(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 2), handleNavigation);
+    Future.delayed(const Duration(seconds: 3), handleNavigation);
   }
 
   Future<void> handleNavigation() async {
     final user = FirebaseAuth.instance.currentUser;
-    print("👤 FirebaseAuth currentUser: ${user?.uid}");
 
     if (user == null) {
-      print("🔁 No user found → navigating to LoginScreen");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -56,16 +62,12 @@ class _SplashScreenState extends State<SplashScreen>
           .doc(user.uid)
           .get();
 
-      print("📄 Firestore user doc exists: ${doc.exists}");
-
       if (doc.exists) {
-        print("✅ Routing to HomeScreen");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
-        print("🆕 Routing to FTUEScreen");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const FTUEScreen()),
@@ -84,40 +86,11 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
+      body: FadeTransition(
+        opacity: _fadeAnim,
         child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/logo.png',
-                width: 100,
-                height: 100,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Isylsi',
-                style: TextStyle(
-                  fontFamily: 'Cinzel',
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFD4AF37),
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'AI Powered Quizzes For CBSE Class 6 – 10',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  color: Color(0xFFB2954A),
-                ),
-              ),
-            ],
-          ),
+          scale: _scaleAnim,
+          child: const LogoWrapper(), // no offset on splash
         ),
       ),
     );
