@@ -13,80 +13,170 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tabWidth = screenWidth / 5;
+    const highlightColor = Color(0xFFE62E53);
+    const separatorColor = Colors.white24;
+
     return Theme(
       data: Theme.of(context).copyWith(
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
-        iconTheme: const IconThemeData(size: 16, color: Colors.white54),
+        iconTheme: const IconThemeData(size: 14, color: Colors.white54),
         textTheme: Theme.of(context).textTheme.copyWith(
-              bodySmall: const TextStyle(fontSize: 8, color: Colors.white54),
+              bodySmall: const TextStyle(fontSize: 8, color: Colors.white),
             ),
       ),
-      child: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Colors.white24, width: 0.25),
-          ),
-        ),
-        padding: const EdgeInsets.only(bottom: 2, top: 2),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: onTap,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          iconSize: 16,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
-              label: 'Home',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(LucideIcons.history),
-              label: 'History',
-            ),
-            BottomNavigationBarItem(
-              icon: Transform.translate(
-                offset: const Offset(0, -4),
-                child: Container(
-                  height: 48,
-                  width: 48,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE62E53),
-                    shape: BoxShape.circle,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // BottomNavigationBar
+          BottomNavigationBar(
+            currentIndex: currentIndex,
+            onTap: onTap,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white54,
+            selectedFontSize: 0,
+            unselectedFontSize: 0,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            items: [
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.home,
+                        color: currentIndex == 0 ? highlightColor : Colors.white54,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Home',
+                        style: TextStyle(fontSize: 12, color: Colors.white54),
+                      ),
+                    ],
                   ),
-                  child: const Icon(
+                ),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.history,
+                        color: currentIndex == 1 ? highlightColor : Colors.white54,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'History',
+                        style: TextStyle(fontSize: 12, color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ),
+                label: '',
+              ),
+              const BottomNavigationBarItem(
+                icon: SizedBox.shrink(), // Placeholder for center tab
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.lightbulb,
+                        color: currentIndex == 3 ? highlightColor : Colors.white54,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Insights',
+                        style: TextStyle(fontSize: 12, color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.leaf,
+                        color: currentIndex == 4 ? highlightColor : Colors.white54,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Syl',
+                        style: TextStyle(fontSize: 12, color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ),
+                label: '',
+              ),
+            ],
+          ),
+
+          // Top separator line
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 0.5,
+              color: separatorColor,
+            ),
+          ),
+
+          // Highlight underline
+          Positioned(
+            top: 0,
+            left: tabWidth * currentIndex,
+            child: Container(
+              width: tabWidth,
+              height: 1.5,
+              color: highlightColor,
+            ),
+          ),
+
+          // Center Play Button (floating)
+          Positioned(
+            top: -10,
+            left: (screenWidth - 60) / 2,
+            child: Material(
+              elevation: 6,
+              shape: const CircleBorder(),
+              color: highlightColor,
+              child: InkWell(
+                onTap: () => onTap(2),
+                customBorder: const CircleBorder(),
+                child: const SizedBox(
+                  height: 60,
+                  width: 60,
+                  child: Icon(
                     LucideIcons.play,
-                    size: 24,
+                    size: 28,
                     color: Colors.white,
                   ),
                 ),
               ),
-              label: ' ',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(LucideIcons.lightbulb),
-              label: 'Insights',
-            ),
-            BottomNavigationBarItem(
-              icon: SizedBox(
-                height: 18,
-                width: 18,
-                child: Image.asset(
-                  'assets/icons/leaf_icon_gray.png',
-                  fit: BoxFit.contain,
-                ),
-              ),
-              label: 'Syl',
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

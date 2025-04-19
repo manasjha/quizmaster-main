@@ -5,9 +5,27 @@ import '../components/header_bar.dart';
 import '../components/bottom_nav_bar.dart';
 import '../providers/user_provider.dart';
 import '../utils/auth_utils.dart';
+import 'history_screen.dart';
+import 'insights_screen.dart';
+import 'syl_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const Center(child: Text('Home Screen')),
+    const HistoryScreen(),
+    const SizedBox(), // Placeholder for Play tab
+    const InsightsScreen(),
+    const SylScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +49,21 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           HeaderBar(userPhotoUrl: user?.photoUrl ?? ''),
-          // TODO: Add actual home content here
+          Expanded(
+            child: _screens[_currentIndex == 2 ? 0 : _currentIndex],
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0,
+        currentIndex: _currentIndex,
         onTap: (index) {
-          // TODO: handle navigation between screens
+          if (index == 2) {
+            // Launch quiz flow logic later
+            return;
+          }
+          setState(() {
+            _currentIndex = index;
+          });
         },
       ),
     );
