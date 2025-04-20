@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:quizmaster/widgets/new_quiz_start_popup.dart'; // <- import this
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quizmaster/widgets/quiz_start_popup.dart'; // <- NEW
+import 'package:quizmaster/services/fetch_user_quiz_setup.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -55,10 +57,7 @@ class BottomNavBar extends StatelessWidget {
                         color: currentIndex == 0 ? highlightColor : Colors.white54,
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        'Home',
-                        style: TextStyle(fontSize: 12, color: Colors.white54),
-                      ),
+                      Text('Home', style: TextStyle(fontSize: 12, color: Colors.white54)),
                     ],
                   ),
                 ),
@@ -75,10 +74,7 @@ class BottomNavBar extends StatelessWidget {
                         color: currentIndex == 1 ? highlightColor : Colors.white54,
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        'History',
-                        style: TextStyle(fontSize: 12, color: Colors.white54),
-                      ),
+                      Text('History', style: TextStyle(fontSize: 12, color: Colors.white54)),
                     ],
                   ),
                 ),
@@ -99,10 +95,7 @@ class BottomNavBar extends StatelessWidget {
                         color: currentIndex == 3 ? highlightColor : Colors.white54,
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        'Insights',
-                        style: TextStyle(fontSize: 12, color: Colors.white54),
-                      ),
+                      Text('Insights', style: TextStyle(fontSize: 12, color: Colors.white54)),
                     ],
                   ),
                 ),
@@ -119,10 +112,7 @@ class BottomNavBar extends StatelessWidget {
                         color: currentIndex == 4 ? highlightColor : Colors.white54,
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        'Syl',
-                        style: TextStyle(fontSize: 12, color: Colors.white54),
-                      ),
+                      Text('Syl', style: TextStyle(fontSize: 12, color: Colors.white54)),
                     ],
                   ),
                 ),
@@ -135,20 +125,13 @@ class BottomNavBar extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
-              height: 0.5,
-              color: separatorColor,
-            ),
+            child: Container(height: 0.5, color: separatorColor),
           ),
 
           Positioned(
             top: 0,
             left: tabWidth * currentIndex,
-            child: Container(
-              width: tabWidth,
-              height: 1.5,
-              color: highlightColor,
-            ),
+            child: Container(width: tabWidth, height: 1.5, color: highlightColor),
           ),
 
           // Center Play Button
@@ -160,14 +143,26 @@ class BottomNavBar extends StatelessWidget {
               shape: const CircleBorder(),
               color: highlightColor,
               child: InkWell(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const NewQuizStartPopup(quizNumber: 1),
+                onTap: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) return;
+
+                  final result = await fetchUserQuizSetup(
+                    userId: user.uid,
+                    classNum: 6,
+                    subject: 'Math',
                   );
-                },
+
+                  showDialog(
+                    context: context,
+                    builder: (_) => QuizStartPopup(
+                      quizzesAttempted: result.quizzesAttempted,
+                      aiQuizzesAvailable: result.aiQuizzesAvailable,
+                      selectedChapters: result.selectedChapters,
+                    ),
+  );
+},
+
                 customBorder: const CircleBorder(),
                 child: const SizedBox(
                   height: 60,
