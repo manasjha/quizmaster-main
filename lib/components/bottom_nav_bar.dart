@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:quizmaster/widgets/new_quiz_start_popup.dart'; // <- import this
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -31,7 +32,6 @@ class BottomNavBar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // BottomNavigationBar
           BottomNavigationBar(
             currentIndex: currentIndex,
             onTap: onTap,
@@ -85,7 +85,7 @@ class BottomNavBar extends StatelessWidget {
                 label: '',
               ),
               const BottomNavigationBarItem(
-                icon: SizedBox.shrink(), // Placeholder for center tab
+                icon: SizedBox.shrink(),
                 label: '',
               ),
               BottomNavigationBarItem(
@@ -131,7 +131,6 @@ class BottomNavBar extends StatelessWidget {
             ],
           ),
 
-          // Top separator line
           Positioned(
             top: 0,
             left: 0,
@@ -142,7 +141,6 @@ class BottomNavBar extends StatelessWidget {
             ),
           ),
 
-          // Highlight underline
           Positioned(
             top: 0,
             left: tabWidth * currentIndex,
@@ -153,7 +151,7 @@ class BottomNavBar extends StatelessWidget {
             ),
           ),
 
-          // Center Play Button (floating)
+          // Center Play Button
           Positioned(
             top: -10,
             left: (screenWidth - 60) / 2,
@@ -162,7 +160,14 @@ class BottomNavBar extends StatelessWidget {
               shape: const CircleBorder(),
               color: highlightColor,
               child: InkWell(
-                onTap: () => onTap(2),
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const NewQuizStartPopup(quizNumber: 1),
+                  );
+                },
                 customBorder: const CircleBorder(),
                 child: const SizedBox(
                   height: 60,
