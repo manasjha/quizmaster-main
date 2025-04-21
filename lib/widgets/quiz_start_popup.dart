@@ -3,6 +3,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'quiz_type_card.dart';
 import 'custom_quiz_option.dart';
+import 'package:quizmaster/services/diagnostic_quiz_service.dart';
+import 'package:quizmaster/screens/quiz_screen.dart';
 
 enum QuizStartMode { newUser, repeatUser }
 
@@ -125,7 +127,7 @@ class _QuizStartPopupState extends State<QuizStartPopup> with SingleTickerProvid
           isSelected: selectedOption == 1,
           onSelect: () => setState(() => selectedOption = 1),
           title: "Diagnostic",
-          subtitle: "Answer randomly chosen questions to help Isylsi identify your base level in Class 6 Math",
+          subtitle: "Help Isylsi identify your current level in Class 6 Math",
           expandedContent: const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -178,9 +180,29 @@ class _QuizStartPopupState extends State<QuizStartPopup> with SingleTickerProvid
             if (autoStartActive) {
               cancelCountdown();
             } else {
-              startCountdown();
+              if (selectedOption == 1) {
+                // Diagnostic selected
+                generateDiagnosticQuiz(classNum: 6, subject: "Math").then((questions) {
+                  Navigator.of(context).pop(); // close popup
+
+                  // Navigate to QuizScreen
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => QuizScreen(
+                        questions: questions,
+                        quizTitle: "Diagnostic Quiz #${widget.quizzesAttempted + 1}",
+                        isDiagnostic: true,
+                      ),
+                    ),
+                  );
+                });
+              } else {
+                // TODO: Handle Custom or Eye of Isylsi
+                startCountdown();
+              }
             }
           },
+
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFE62E53),
             foregroundColor: Colors.white,
