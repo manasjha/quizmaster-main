@@ -19,17 +19,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const Center(child: Text('Home Screen')),
-    const HistoryScreen(),
-    const SizedBox(), // Placeholder for Play tab
-    const InsightsScreen(),
-    const SylScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context).user;
+    final userId = user?.uid ?? '';
+
+    final List<Widget> _screens = [
+      const Center(child: Text('Home Screen')),
+      HistoryScreen(userId: userId), // ✅ userId now passed here
+      const SizedBox(), // Placeholder for Play tab
+      const InsightsScreen(),
+      const SylScreen(),
+    ];
 
     return Scaffold(
       drawer: Drawer(

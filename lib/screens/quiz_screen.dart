@@ -17,6 +17,9 @@ class QuestionResponse {
   final dynamic correctAnswer;
   final bool isCorrect;
   final double timeTakenSeconds;
+  final String topic;
+  final String chapter;
+  final String questionText;
 
   QuestionResponse({
     required this.questionId,
@@ -24,6 +27,9 @@ class QuestionResponse {
     required this.correctAnswer,
     required this.isCorrect,
     required this.timeTakenSeconds,
+    required this.topic,
+    required this.chapter,
+    required this.questionText,
   });
 
   Map<String, dynamic> toMap() {
@@ -33,9 +39,13 @@ class QuestionResponse {
       'correct_answer': correctAnswer,
       'is_correct': isCorrect,
       'time_taken_seconds': timeTakenSeconds,
+      'topic': topic,
+      'chapter': chapter,
+      'question_text': questionText,
     };
   }
 }
+
 
 class QuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>> questions;
@@ -97,55 +107,62 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
   }
 
   void _goToNextQuestion() {
-    final currentQuestion = widget.questions[currentIndex];
-    final format = currentQuestion['format'];
-    final options = currentQuestion['options'] as List<dynamic>? ?? [];
-    final correctAnswer = currentQuestion['answer'];
+  final currentQuestion = widget.questions[currentIndex];
+  final format = currentQuestion['format'];
+  final options = currentQuestion['options'] as List<dynamic>? ?? [];
+  final correctAnswer = currentQuestion['answer'];
+  final topic = currentQuestion['topic'] ?? '-';
+  final chapter = currentQuestion['chapter'] ?? '-';
+  final questionText = currentQuestion['question_text'] ?? '-';
 
-    dynamic selectedAnswer;
-    bool isAnswerCorrect = false;
+  dynamic selectedAnswer;
+  bool isAnswerCorrect = false;
 
-    if (format == 'Fill in the Blank') {
-      selectedAnswer = textController.text.trim();
-      isAnswerCorrect = selectedAnswer.toLowerCase() == correctAnswer.toString().toLowerCase();
-    } else if (format == 'Match the Following') {
-      selectedAnswer = userMatch;
-      isAnswerCorrect = MapEquality().equals(selectedAnswer, correctAnswer);
-    } else {
-      if (selectedOptionIndex != null && selectedOptionIndex! < options.length) {
-        selectedAnswer = options[selectedOptionIndex!];
-        isAnswerCorrect = selectedAnswer == correctAnswer;
-      }
-    }
-
-    final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
-    timeTakenPerQuestion.add(elapsed);
-
-    final response = QuestionResponse(
-      questionId: currentQuestion['question_id'],
-      selectedAnswer: selectedAnswer,
-      correctAnswer: correctAnswer,
-      isCorrect: isAnswerCorrect,
-      timeTakenSeconds: elapsed.toDouble(),
-    );
-
-    responses.add(response);
-    print("📩 User answered Q${currentIndex + 1} | Correct: $isAnswerCorrect | Answer: $selectedAnswer");
-
-    if (currentIndex < widget.questions.length - 1) {
-      setState(() {
-        currentIndex++;
-        selectedOptionIndex = null;
-        isAnswered = false;
-        isCorrect = false;
-        showNextButton = false;
-      });
-      _startTimer();
-    } else {
-      _uploadQuizAttempt();
-      Navigator.pop(context);
+  if (format == 'Fill in the Blank') {
+    selectedAnswer = textController.text.trim();
+    isAnswerCorrect = selectedAnswer.toLowerCase() == correctAnswer.toString().toLowerCase();
+  } else if (format == 'Match the Following') {
+    selectedAnswer = userMatch;
+    isAnswerCorrect = MapEquality().equals(selectedAnswer, correctAnswer);
+  } else {
+    if (selectedOptionIndex != null && selectedOptionIndex! < options.length) {
+      selectedAnswer = options[selectedOptionIndex!];
+      isAnswerCorrect = selectedAnswer == correctAnswer;
     }
   }
+
+  final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
+  timeTakenPerQuestion.add(elapsed);
+
+  final response = QuestionResponse(
+    questionId: currentQuestion['question_id'],
+    selectedAnswer: selectedAnswer,
+    correctAnswer: correctAnswer,
+    isCorrect: isAnswerCorrect,
+    timeTakenSeconds: elapsed.toDouble(),
+    topic: topic,
+    chapter: chapter,
+    questionText: questionText,
+  );
+
+  responses.add(response);
+  print("📩 User answered Q${currentIndex + 1} | Correct: $isAnswerCorrect | Answer: $selectedAnswer");
+
+  if (currentIndex < widget.questions.length - 1) {
+    setState(() {
+      currentIndex++;
+      selectedOptionIndex = null;
+      isAnswered = false;
+      isCorrect = false;
+      showNextButton = false;
+    });
+    _startTimer();
+  } else {
+    _uploadQuizAttempt();
+    Navigator.pop(context);
+  }
+}
+
 
   Future<void> _uploadQuizAttempt() async {
     final firestore = FirebaseFirestore.instance;
