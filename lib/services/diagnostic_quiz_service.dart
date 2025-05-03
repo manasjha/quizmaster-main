@@ -15,7 +15,13 @@ Future<List<Map<String, dynamic>>> generateDiagnosticQuiz({
       .where('is_diagnostic', isEqualTo: true)
       .get();
 
-  final allQuestions = querySnapshot.docs.map((doc) => doc.data()).toList();
+  final allQuestions = querySnapshot.docs.map((doc) {
+    final data = doc.data();
+    return {
+      ...data,
+      'question_id': doc.id, // 🔥 Insert the real Firestore document ID
+    };
+  }).toList();
 
   // Shuffle to ensure randomness
   allQuestions.shuffle(Random());

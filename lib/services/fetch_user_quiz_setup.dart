@@ -66,7 +66,7 @@ Future<UserQuizSetupResult> fetchUserQuizSetup({
     final recentTopicIds = recentTopics.map((e) => e['topic_id']).toSet();
 
     final topicIdToChapter = {
-      for (var doc in topicSnap.docs) doc['topic_id']: doc['chapter']
+      for (var doc in topicSnap.docs) doc.id: doc['chapter']
     };
 
     selectedChapters = recentTopicIds

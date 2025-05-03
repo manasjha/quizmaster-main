@@ -1,12 +1,41 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:quizmaster/widgets/question_header.dart';
 import 'package:quizmaster/widgets/options_grid.dart';
 import 'package:quizmaster/widgets/tf_button_row.dart';
 import 'package:quizmaster/widgets/match_the_following.dart';
-import 'package:collection/collection.dart'; // for deep map comparison
+import 'package:collection/collection.dart';
 import 'package:quizmaster/widgets/fill_in_the_blank.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:quizmaster/services/scoring_service.dart';
 
+class QuestionResponse {
+  final String questionId;
+  final dynamic selectedAnswer;
+  final dynamic correctAnswer;
+  final bool isCorrect;
+  final double timeTakenSeconds;
+
+  QuestionResponse({
+    required this.questionId,
+    required this.selectedAnswer,
+    required this.correctAnswer,
+    required this.isCorrect,
+    required this.timeTakenSeconds,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'question_id': questionId,
+      'selected_answer': selectedAnswer,
+      'correct_answer': correctAnswer,
+      'is_correct': isCorrect,
+      'time_taken_seconds': timeTakenSeconds,
+    };
+  }
+}
 
 class QuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>> questions;
@@ -35,7 +64,11 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
   bool showNextButton = false;
 
   List<int> timeTakenPerQuestion = [];
+  List<QuestionResponse> responses = [];
+  Map<String, String> userMatch = {};
   final int questionDuration = 30;
+  TextEditingController textController = TextEditingController();
+  Set<int> _loggedIndexes = {};
 
   @override
   void initState() {
@@ -64,8 +97,40 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
   }
 
   void _goToNextQuestion() {
+    final currentQuestion = widget.questions[currentIndex];
+    final format = currentQuestion['format'];
+    final options = currentQuestion['options'] as List<dynamic>? ?? [];
+    final correctAnswer = currentQuestion['answer'];
+
+    dynamic selectedAnswer;
+    bool isAnswerCorrect = false;
+
+    if (format == 'Fill in the Blank') {
+      selectedAnswer = textController.text.trim();
+      isAnswerCorrect = selectedAnswer.toLowerCase() == correctAnswer.toString().toLowerCase();
+    } else if (format == 'Match the Following') {
+      selectedAnswer = userMatch;
+      isAnswerCorrect = MapEquality().equals(selectedAnswer, correctAnswer);
+    } else {
+      if (selectedOptionIndex != null && selectedOptionIndex! < options.length) {
+        selectedAnswer = options[selectedOptionIndex!];
+        isAnswerCorrect = selectedAnswer == correctAnswer;
+      }
+    }
+
     final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
     timeTakenPerQuestion.add(elapsed);
+
+    final response = QuestionResponse(
+      questionId: currentQuestion['question_id'],
+      selectedAnswer: selectedAnswer,
+      correctAnswer: correctAnswer,
+      isCorrect: isAnswerCorrect,
+      timeTakenSeconds: elapsed.toDouble(),
+    );
+
+    responses.add(response);
+    print("📩 User answered Q${currentIndex + 1} | Correct: $isAnswerCorrect | Answer: $selectedAnswer");
 
     if (currentIndex < widget.questions.length - 1) {
       setState(() {
@@ -77,9 +142,46 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       });
       _startTimer();
     } else {
+      _uploadQuizAttempt();
       Navigator.pop(context);
-      // TODO: Save timeTakenPerQuestion to Firestore here
     }
+  }
+
+  Future<void> _uploadQuizAttempt() async {
+    final firestore = FirebaseFirestore.instance;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print("❌ User not logged in!");
+      return;
+    }
+    final userId = user.uid;
+    final quizId = "${userId}_${DateTime.now().millisecondsSinceEpoch}";
+
+    final now = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
+    final formattedStartTime = DateFormat('d MMM yyyy, hh:mm a').format(now);
+
+    await firestore.collection('quiz_attempts').doc(quizId).set({
+      'user_id': userId,
+      'quiz_id': quizId,
+      'start_time_ist': formattedStartTime,
+      'total_time_taken_seconds': timeTakenPerQuestion.fold<int>(0, (a, b) => a + b),
+      'is_diagnostic': widget.isDiagnostic,
+      'timestamp': FieldValue.serverTimestamp(),
+      'responses': responses.map((r) => r.toMap()).toList(),
+    });
+
+    print("✅ Quiz attempt uploaded!");
+    print("📊 Final Quiz Responses:");
+    for (var r in responses) {
+      print(r.toMap());
+    }
+
+    await ScoringService().processQuizResults(
+      userId: userId,
+      responses: responses,
+      userClass: 6,
+      subject: 'Math',
+    );
   }
 
   void handleAnswer(int index, List<dynamic> options, dynamic correctAnswer) {
@@ -99,8 +201,9 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       showNextButton = !isAnswerCorrect;
     });
 
-    showToast(context, isAnswerCorrect ? "Correct!" : "Incorrect!");
+    print("📩 User selected option ${index + 1}: $selected | Correct: $isAnswerCorrect");
 
+    showToast(context, isAnswerCorrect ? "Correct!" : "Incorrect!");
     if (isAnswerCorrect) {
       Future.delayed(const Duration(seconds: 2), _goToNextQuestion);
     }
@@ -115,12 +218,17 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final currentQuestion = widget.questions[currentIndex];
-    print("🟡 Q${currentIndex + 1} | Format: ${currentQuestion['format']}");
-    print("🔹 Question Text: ${currentQuestion['question_text']}");
-    print("🔸 Options: ${currentQuestion['options']}");
-    print("🔸 Column A: ${currentQuestion['column_a']}");
-    print("🔸 Column B: ${currentQuestion['column_b']}");
-    print("🔸 Answer: ${currentQuestion['answer']}");
+
+    if (!_loggedIndexes.contains(currentIndex)) {
+      _loggedIndexes.add(currentIndex);
+      print("🟡 Q${currentIndex + 1} | Format: ${currentQuestion['format']}");
+      print("🔹 Question Text: ${currentQuestion['question_text']}");
+      print("🔸 Options: ${currentQuestion['options']}");
+      print("🔸 Column A: ${currentQuestion['column_a']}");
+      print("🔸 Column B: ${currentQuestion['column_b']}");
+      print("🔸 Answer: ${currentQuestion['answer']}");
+    }
+
     final options = currentQuestion['options'] as List<dynamic>? ?? [];
     final correctAnswer = currentQuestion['answer'];
     final explanation = currentQuestion['explanation'];
@@ -166,72 +274,71 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: currentQuestion['format'] == 'True/False'
-              ? TFButtonRow(
-                selectedIndex: selectedOptionIndex,
-                isAnswered: isAnswered,
-                isCorrectAnswer: correctAnswer.toString().toLowerCase() == 'true',
-                onSelect: (index) {
-                  final tfOptions = ['True', 'False'];
-                  handleAnswer(index, tfOptions, correctAnswer);
-                },
-              )
-              : currentQuestion['format'] == 'Match the Following'
-                ? MatchTheFollowingWidget(
-                  columnA: List<String>.from(currentQuestion['column_a'] ?? []),
-                  columnB: List<String>.from(currentQuestion['column_b'] ?? []),
-                  correctAnswer: Map<String, String>.from(currentQuestion['answer'] ?? {}),
-                  isAnswered: isAnswered,
-                  onSubmit: (bool isCorrectNow, Map<String, String> userMatch) {
-                    final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
-                    timeTakenPerQuestion.add(elapsed);
-                    _timerController.stop();
+                  ? TFButtonRow(
+                      selectedIndex: selectedOptionIndex,
+                      isAnswered: isAnswered,
+                      isCorrectAnswer: correctAnswer.toString().toLowerCase() == 'true',
+                      onSelect: (index) {
+                        final tfOptions = ['True', 'False'];
+                        handleAnswer(index, tfOptions, correctAnswer);
+                      },
+                    )
+                  : currentQuestion['format'] == 'Match the Following'
+                      ? MatchTheFollowingWidget(
+                          columnA: List<String>.from(currentQuestion['column_a'] ?? []),
+                          columnB: List<String>.from(currentQuestion['column_b'] ?? []),
+                          correctAnswer: Map<String, String>.from(currentQuestion['answer'] ?? {}),
+                          isAnswered: isAnswered,
+                          onSubmit: (bool isCorrectNow, Map<String, String> submittedMatch) {
+                            final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
+                            timeTakenPerQuestion.add(elapsed);
+                            _timerController.stop();
 
-                    setState(() {
-                      selectedOptionIndex = null;
-                      isAnswered = true;
-                      isCorrect = isCorrectNow;
-                      showNextButton = !isCorrectNow;
-                    });
+                            setState(() {
+                              userMatch = submittedMatch;
+                              selectedOptionIndex = null;
+                              isAnswered = true;
+                              isCorrect = isCorrectNow;
+                              showNextButton = !isCorrectNow;
+                            });
 
-                    showToast(context, isCorrectNow ? "Correct!" : "Incorrect!");
+                            showToast(context, isCorrectNow ? "Correct!" : "Incorrect!");
 
-                    if (isCorrectNow) {
-                      Future.delayed(const Duration(seconds: 2), _goToNextQuestion);
-                    }
-                  },
-                )
-              : currentQuestion['format'] == 'Fill in the Blank'
-                ? FillInTheBlankWidget(
-                  correctAnswer: correctAnswer.toString(),
-                  isAnswered: isAnswered,
-                  onSubmit: (bool isCorrectNow, String userInput) {
-                    final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
-                    timeTakenPerQuestion.add(elapsed);
-                    _timerController.stop();
+                            if (isCorrectNow) {
+                              Future.delayed(const Duration(seconds: 2), _goToNextQuestion);
+                            }
+                          })
+                      : currentQuestion['format'] == 'Fill in the Blank'
+                          ? FillInTheBlankWidget(
+                              correctAnswer: correctAnswer.toString(),
+                              isAnswered: isAnswered,
+                              onSubmit: (bool isCorrectNow, String userInput) {
+                                final elapsed = (questionDuration * (1.0 - _progressAnimation.value)).floor();
+                                timeTakenPerQuestion.add(elapsed);
+                                _timerController.stop();
 
-                    setState(() {
-                      selectedOptionIndex = null;
-                      isAnswered = true;
-                      isCorrect = isCorrectNow;
-                      showNextButton = !isCorrectNow;
-                    });
+                                setState(() {
+                                  textController.text = userInput;
+                                  selectedOptionIndex = null;
+                                  isAnswered = true;
+                                  isCorrect = isCorrectNow;
+                                  showNextButton = !isCorrectNow;
+                                });
 
-                    showToast(context, isCorrectNow ? "Correct!" : "Incorrect!");
+                                showToast(context, isCorrectNow ? "Correct!" : "Incorrect!");
 
-                    if (isCorrectNow) {
-                      Future.delayed(const Duration(seconds: 2), _goToNextQuestion);
-                    }
-                  },
-                )
-              : OptionsGrid(
-                  options: options.map((e) => e.toString()).toList(),
-                  selectedIndex: selectedOptionIndex,
-                  correctIndex: options.indexOf(correctAnswer),
-                  isAnswered: isAnswered,
-                  onSelect: (index) => handleAnswer(index, options, correctAnswer),
-                ),
+                                if (isCorrectNow) {
+                                  Future.delayed(const Duration(seconds: 2), _goToNextQuestion);
+                                }
+                              })
+                          : OptionsGrid(
+                              options: options.map((e) => e.toString()).toList(),
+                              selectedIndex: selectedOptionIndex,
+                              correctIndex: options.indexOf(correctAnswer),
+                              isAnswered: isAnswered,
+                              onSelect: (index) => handleAnswer(index, options, correctAnswer),
+                            ),
             ),
-
             if (isAnswered && !isCorrect && explanation != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
