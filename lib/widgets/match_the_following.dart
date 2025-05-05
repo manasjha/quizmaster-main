@@ -23,7 +23,6 @@ class MatchTheFollowingWidget extends StatefulWidget {
 
 class _MatchTheFollowingWidgetState extends State<MatchTheFollowingWidget> {
   String? selectedA;
-  String? selectedB;
   Map<String, String> userMatch = {};
 
   @override
@@ -68,28 +67,21 @@ class _MatchTheFollowingWidgetState extends State<MatchTheFollowingWidget> {
             Expanded(
               child: Column(
                 children: widget.columnB.map((b) {
-                  final isSelected = b == selectedB;
                   final isMatched = userMatch.containsValue(b);
                   return GestureDetector(
-                    onTap: widget.isAnswered
+                    onTap: widget.isAnswered || selectedA == null
                         ? null
                         : () {
-                            if (selectedA == null) return;
                             setState(() {
                               userMatch[selectedA!] = b;
                               selectedA = null;
-                              selectedB = null;
                             });
                           },
                     child: Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.pink
-                            : isMatched
-                                ? Colors.green
-                                : Colors.grey[900],
+                        color: isMatched ? Colors.green : Colors.grey[900],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(b, style: const TextStyle(color: Colors.white)),
@@ -101,7 +93,7 @@ class _MatchTheFollowingWidgetState extends State<MatchTheFollowingWidget> {
           ],
         ),
         const SizedBox(height: 16),
-        if (!widget.isAnswered && userMatch.length == widget.columnA.length)
+        if (!widget.isAnswered)
           ElevatedButton(
             onPressed: () {
               final isCorrect = MapEquality().equals(userMatch, widget.correctAnswer);

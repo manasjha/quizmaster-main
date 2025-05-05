@@ -10,6 +10,7 @@ import 'package:quizmaster/widgets/fill_in_the_blank.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:quizmaster/services/scoring_service.dart';
+import 'package:quizmaster/services/performance_updater.dart';
 
 class QuestionResponse {
   final String questionId;
@@ -196,6 +197,12 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
     await ScoringService().processQuizResults(
       userId: userId,
       responses: responses,
+      userClass: 6,
+      subject: 'Math',
+    );
+
+    await PerformanceUpdaterService().runForUserAndSubject(
+      userId: userId,
       userClass: 6,
       subject: 'Math',
     );
