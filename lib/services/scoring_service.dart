@@ -115,7 +115,7 @@ class ScoringService {
     }
 
     // Update user_performance
-    final perfDocId = '${userId}_class${userClass}_${subject.toLowerCase()}';
+    final perfDocId = '${userId}_class${userClass}_$subject';
     final perfRef = _firestore.collection('user_performance').doc(perfDocId);
     final perfSnap = await perfRef.get();
     int previousAttempted = 0;

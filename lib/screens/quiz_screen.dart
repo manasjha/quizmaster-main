@@ -186,6 +186,8 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       'is_diagnostic': widget.isDiagnostic,
       'timestamp': FieldValue.serverTimestamp(),
       'responses': responses.map((r) => r.toMap()).toList(),
+      'class': '6',      // ✅ Add this
+      'subject': 'Math', // ✅ Add this
     });
 
     print("✅ Quiz attempt uploaded!");
